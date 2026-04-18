@@ -3,7 +3,7 @@ name = "ballotbox"
 version = "0.1.0"
 description = "Ballotbox API"
 readme = "README.md"
-# CPython 3.14 — pin with `uv python pin 3.14` (see `.python-version`).
+# CPython 3.14 — pin with `uv python pin 3.14` (see repo root `.python-version`).
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "fastapi>=0.115.0",
@@ -32,7 +32,7 @@ build-backend = "hatchling.build"
 packages = ["src/ballotbox"]
 
 [tool.uv]
-# Prefer interpreters installed by `uv python install` (see `.python-version` + docs).
+# Prefer interpreters installed by `uv python install` (see repo root `.python-version` + docs).
 python-preference = "managed"
 
 [tool.ruff]

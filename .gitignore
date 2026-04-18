@@ -28,6 +28,11 @@ coverage/
 *.log
 npm-debug.log*
 .pnpm-store/
+.eslintcache
+*.tsbuildinfo
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+frontend/.vite/
 
 # IDE / OS
 .idea/
