@@ -1,0 +1,76 @@
+html {
+  color-scheme: light;
+  --font-serif: 'Crimson Pro', 'Georgia', serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  --bg-page: #fafafa;
+  --bg-card: #ffffff;
+  --bg-muted: #f5f5f5;
+  --bg-share-url: #f0f0f0;
+  --bg-icon: #fafafa;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --text-primary: #1a1a1a;
+  --text-muted: #6b6b6b;
+  --text-placeholder: rgba(26, 26, 26, 0.5);
+  --accent: #4cb179;
+  --accent-secondary: #cbe7d8;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --bg-page: #0f1210;
+  --bg-card: #161a18;
+  --bg-muted: #1f2421;
+  --bg-share-url: #1c211e;
+  --bg-icon: #1a1f1c;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --text-primary: #f2f4f3;
+  --text-muted: #a8b0ab;
+  --text-placeholder: rgba(242, 244, 243, 0.45);
+  --accent: #5dba87;
+  --accent-secondary: #005231;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+input {
+  font: inherit;
+}

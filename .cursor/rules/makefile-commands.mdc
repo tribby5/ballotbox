@@ -1,0 +1,39 @@
+---
+description: Run repo tasks via the Makefile instead of ad-hoc package-manager commands
+alwaysApply: true
+---
+
+# Use the Makefile for project commands
+
+This repo’s workflows are wired in the root **Makefile**. Prefer those targets so installs, checks, and tests stay consistent.
+
+## Frontend (SvelteKit in `frontend/`)
+
+| Task | Command |
+|------|---------|
+| Install deps | `make frontend-install` |
+| Tests only | `make frontend-test` |
+| Typecheck + lint + tests | `make frontend-check` |
+| Production build | `make frontend-build` |
+| Dev server | `make frontend-run` |
+
+Do **not** default to `cd frontend && npm test` (or similar) when verifying the frontend; use **`make frontend-test`** unless the user asks otherwise.
+
+## Backend (`backend/`)
+
+| Task | Command |
+|------|---------|
+| Install | `make backend-install` |
+| Tests | `make backend-test` |
+| Lint + types + tests | `make backend-check` |
+| API dev server | `make backend-run` |
+
+## Whole repo
+
+| Task | Command |
+|------|---------|
+| Install everything | `make install` |
+| All tests | `make test` |
+| All checks | `make check` |
+
+When suggesting verification after changes, cite the matching **`make …`** target.
