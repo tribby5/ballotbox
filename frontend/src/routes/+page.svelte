@@ -1,9 +1,13 @@
 <script lang="ts">
-  import HelloWorld from '$lib/HelloWorld.svelte';
+  import HomePage from '$lib/home/HomePage.svelte';
 </script>
 
 <svelte:head>
-  <title>Ballotbox</title>
+  <title>Ballot Box</title>
+  <meta
+    name="description"
+    content="Create, share, and vote using ranked-choice voting methods."
+  />
 </svelte:head>
 
-<HelloWorld />
+<HomePage />
