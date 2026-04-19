@@ -38,13 +38,15 @@
       {#if methodsPage}
         <span class="nav-link nav-link-current" aria-current="page">
           <span class="nav-icon" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path
-                d="M3 2.5h4v11H3v-11Zm6 0h4v11H9v-11Z"
+                d="M4 2.5h5l3 3v8.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z"
                 stroke="currentColor"
                 stroke-width="1.2"
                 stroke-linejoin="round"
               />
+              <path d="M9 2.5v3h3" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+              <path d="M5 9h6M5 11h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
             </svg>
           </span>
           Voting Methods
@@ -52,13 +54,15 @@
       {:else}
         <a class="nav-link" href="/methods">
           <span class="nav-icon" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path
-                d="M3 2.5h4v11H3v-11Zm6 0h4v11H9v-11Z"
+                d="M4 2.5h5l3 3v8.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z"
                 stroke="currentColor"
                 stroke-width="1.2"
                 stroke-linejoin="round"
               />
+              <path d="M9 2.5v3h3" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+              <path d="M5 9h6M5 11h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
             </svg>
           </span>
           Voting Methods

@@ -27,7 +27,7 @@
 <SiteHeader />
 
 <div class="bb-page">
-  <div class="bb-page-inner">
+  <div class="bb-page-inner create-page-inner">
     <header class="bb-page-head">
       <h1 class="bb-page-title">Create Vote</h1>
       <p class="bb-page-sub">Vote ID: {voteId || '…'}</p>
@@ -132,6 +132,15 @@
 </div>
 
 <style>
+  .create-page-inner {
+    align-items: center;
+  }
+
+  .create-page-inner > :is(.bb-page-head, .bb-surface) {
+    width: 100%;
+    max-width: 39.5rem;
+  }
+
   .options-block {
     gap: 12px;
   }
