@@ -7,10 +7,16 @@ afterEach(() => {
 });
 
 const sampleVote = {
+  id: '00000000-0000-0000-0000-000000000001',
   public_id: 'demo',
   title: 'Best pet',
-  options: ['dog', 'cat'],
   voting_method: 'ranked_pairs' as const,
+  locked_at: null,
+  password_protected: false,
+  options: [
+    { id: 'opt-dog', label: 'dog', sort_order: 0 },
+    { id: 'opt-cat', label: 'cat', sort_order: 1 },
+  ],
 };
 
 describe('VotePage', () => {

@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import SiteHeader from '$lib/layout/SiteHeader.svelte';
   import type { VoteRow } from '$lib/vote/voteRecord';
+  import { submitBallot } from '$lib/vote/submitBallot';
 
   type OptionRow = { id: string; text: string };
 
@@ -11,14 +13,18 @@
   let numericRanks = $state<string[]>([]);
   let rankError = $state<string | null>(null);
   let dragFrom = $state<number | null>(null);
+  let submitError = $state<string | null>(null);
+  let submitting = $state(false);
+  let submittedProtected = $state(false);
 
   $effect.pre(() => {
-    ordered = vote.options.map((text, i) => ({
-      id: `opt-${vote.public_id}-${i}`,
-      text,
+    ordered = vote.options.map((o) => ({
+      id: o.id,
+      text: o.label,
     }));
     numericRanks = vote.options.map(() => '');
     rankError = null;
+    submitError = null;
     mode = 'drag';
   });
 
@@ -52,8 +58,8 @@
 
   function submitDrag() {
     rankError = null;
-    const order = ordered.map((o) => o.text);
-    void persistBallot(order);
+    const orderIds = ordered.map((o) => o.id);
+    void persistBallot(orderIds);
   }
 
   function submitNumeric() {
@@ -74,16 +80,33 @@
       rankError = 'Ranks must be unique.';
       return;
     }
-    const order = [...vote.options]
-      .map((text, i) => ({ text, r: ranks[i] }))
+    const orderIds = [...vote.options]
+      .map((opt, i) => ({ id: opt.id, r: ranks[i] }))
       .sort((a, b) => a.r - b.r)
-      .map((x) => x.text);
-    void persistBallot(order);
+      .map((x) => x.id);
+    void persistBallot(orderIds);
   }
 
-  async function persistBallot(order: string[]) {
-    void order;
-    // Replace with Supabase insert when API exists
+  async function persistBallot(orderedOptionIds: string[]) {
+    if (vote.locked_at) {
+      submitError = 'This vote is closed to new responses.';
+      return;
+    }
+    submitting = true;
+    submitError = null;
+    submittedProtected = false;
+    try {
+      await submitBallot(vote.id, orderedOptionIds);
+      if (vote.password_protected) {
+        submittedProtected = true;
+        return;
+      }
+      await goto(`/results/${encodeURIComponent(vote.public_id)}`);
+    } catch (e) {
+      submitError = e instanceof Error ? e.message : 'Could not submit your vote.';
+    } finally {
+      submitting = false;
+    }
   }
 </script>
 
@@ -159,10 +182,10 @@
         </ul>
       {:else}
         <ul class="option-list numeric-list" role="list">
-          {#each vote.options as opt, i (i)}
+          {#each vote.options as opt, i (opt.id)}
             <li class="numeric-row">
-              <span class="option-label-static">{opt}</span>
-              <label class="sr-only" for="rank-{i}">Rank for {opt}</label>
+              <span class="option-label-static">{opt.label}</span>
+              <label class="sr-only" for="rank-{i}">Rank for {opt.label}</label>
               <input
                 id="rank-{i}"
                 class="bb-input bb-input--narrow"
@@ -185,13 +208,24 @@
         {/if}
       {/if}
 
-      <button
-        class="bb-btn-primary-lg"
-        type="button"
-        onclick={mode === 'drag' ? submitDrag : submitNumeric}
-      >
-        Submit Vote
-      </button>
+      {#if submitError}
+        <p class="rank-error" role="alert">{submitError}</p>
+      {/if}
+
+      {#if submittedProtected}
+        <p class="submit-ok" role="status">
+          Your vote was recorded. The vote organizer controls access to results for this vote.
+        </p>
+      {:else}
+        <button
+          class="bb-btn-primary-lg"
+          type="button"
+          disabled={submitting || !!vote.locked_at}
+          onclick={mode === 'drag' ? submitDrag : submitNumeric}
+        >
+          {submitting ? 'Submitting…' : vote.locked_at ? 'Voting closed' : 'Submit Vote'}
+        </button>
+      {/if}
     </div>
   </div>
 </div>
@@ -316,5 +350,12 @@
 
   :global(html[data-theme='dark']) .rank-error {
     color: #f97066;
+  }
+
+  .submit-ok {
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--text-muted);
   }
 </style>

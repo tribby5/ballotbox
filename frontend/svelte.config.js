@@ -3,7 +3,10 @@ import adapter from '@sveltejs/adapter-static';
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   kit: {
-    adapter: adapter({ strict: true }),
+    adapter: adapter({
+      strict: false,
+      fallback: 'index.html',
+    }),
     prerender: {
       handleMissingId: 'warn'
     }

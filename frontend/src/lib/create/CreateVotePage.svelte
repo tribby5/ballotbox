@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import SiteHeader from '$lib/layout/SiteHeader.svelte';
+  import { createVoteInSupabase } from '$lib/vote/createVote';
   import { VOTING_METHODS, type VotingMethodValue } from '$lib/votingMethods';
 
   function randomVoteId(): string {
@@ -13,6 +15,8 @@
   let options = $state(['', '']);
   let method = $state<VotingMethodValue>('ranked_pairs');
   let password = $state('');
+  let saving = $state(false);
+  let saveError = $state<string | null>(null);
 
   onMount(() => {
     voteId = randomVoteId();
@@ -21,6 +25,42 @@
   function addOption() {
     if (options.length >= 30) return;
     options = [...options, ''];
+  }
+
+  async function finalizeVote() {
+    saveError = null;
+    const t = title.trim();
+    if (!t) {
+      saveError = 'Please enter a vote title.';
+      return;
+    }
+    const trimmedOpts = options.map((o) => o.trim()).filter(Boolean);
+    if (trimmedOpts.length < 2) {
+      saveError = 'Please enter at least two options.';
+      return;
+    }
+    if (!voteId.trim()) {
+      saveError = 'Vote ID is not ready yet; try again.';
+      return;
+    }
+    saving = true;
+    try {
+      await createVoteInSupabase({
+        public_id: voteId.trim(),
+        title: t,
+        optionLabels: options,
+        voting_method: method,
+        password,
+      });
+      await goto(`/manage/${encodeURIComponent(voteId.trim())}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Could not create the vote.';
+      saveError = /duplicate key|unique constraint/i.test(msg)
+        ? 'That vote ID is already taken. Refresh to get a new one.'
+        : msg;
+    } finally {
+      saving = false;
+    }
   }
 </script>
 
@@ -126,7 +166,18 @@
         <p class="hint">If set, only you can view results and edit the vote</p>
       </div>
 
-      <button class="bb-btn-primary-lg finalize" type="button">Finalize Vote</button>
+      {#if saveError}
+        <p class="save-error" role="alert">{saveError}</p>
+      {/if}
+
+      <button
+        class="bb-btn-primary-lg finalize"
+        type="button"
+        disabled={saving}
+        onclick={() => void finalizeVote()}
+      >
+        {saving ? 'Saving…' : 'Finalize Vote'}
+      </button>
     </div>
   </div>
 </div>
@@ -180,5 +231,16 @@
 
   .finalize {
     margin-top: 2px;
+  }
+
+  .save-error {
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    color: #b42318;
+  }
+
+  :global(html[data-theme='dark']) .save-error {
+    color: #f97066;
   }
 </style>
