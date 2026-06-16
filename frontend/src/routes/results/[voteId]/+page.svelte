@@ -6,8 +6,8 @@
 </script>
 
 <svelte:head>
-  <title>Results — {data.summary.vote.title} — Ballot Box</title>
+  <title>Results — Ballot Box</title>
   <meta name="robots" content="noindex" />
 </svelte:head>
 
-<ResultsPage summary={data.summary} />
+<ResultsPage voteId={data.voteId} />
