@@ -1,0 +1,31 @@
+---
+description: FastAPI backend conventions (uv, ruff, mypy, pytest)
+globs: backend/**
+alwaysApply: false
+---
+
+# Backend (Python / FastAPI)
+
+## Stack
+
+FastAPI on **Python 3.14**, managed with **uv**. Package: `src/ballotbox/`. Lambda entry: `handler` (Mangum) in `main.py`.
+
+## Layout
+
+- `src/ballotbox/` — app code (`main.py`, `config.py`, `supabase_client.py`)
+- `tests/` — pytest (`asyncio_mode = auto`)
+
+## Patterns
+
+- Settings via pydantic-settings (`config.py`); env: `SUPABASE_URL`, `SUPABASE_KEY`
+- Keep endpoints thin; domain logic belongs in modules, not route handlers
+- Ruff + mypy strict — match existing style in `pyproject.toml`
+
+## Verify
+
+```bash
+make backend-test       # pytest
+make backend-check      # ruff + mypy + pytest
+```
+
+Prefer repo-root **`make …`** targets over raw `uv run` unless debugging one command.

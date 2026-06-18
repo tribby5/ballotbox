@@ -1,13 +1,18 @@
-.PHONY: install test check \
-	frontend-install frontend-test frontend-check frontend-build \
+.PHONY: install test check code-quality root-install \
+	frontend-install frontend-test frontend-fallow frontend-fallow-audit frontend-fallow-health frontend-check frontend-build \
 	backend-install backend-test backend-check backend-run
 
-# Whole repo (backend then frontend)
-install: backend-install frontend-install
+# Whole repo (backend then frontend, then git hooks)
+install: backend-install frontend-install root-install
 
 test: backend-test frontend-test
 
-check: backend-check frontend-check
+code-quality: backend-check frontend-check
+
+check: code-quality
+
+root-install:
+	npm ci
 
 # Frontend (SvelteKit)
 frontend-install:
@@ -16,7 +21,17 @@ frontend-install:
 frontend-test:
 	cd frontend && npm test
 
-frontend-check:
+frontend-fallow:
+	cd frontend && npm run fallow
+
+frontend-fallow-audit:
+	cd frontend && npm run fallow:audit
+
+frontend-fallow-health:
+	cd frontend && npm run fallow:health
+
+# check, lint, fallow audit (changed files), tests — fallow audit also runs via make code-quality
+frontend-check: frontend-fallow-audit
 	cd frontend && npm run check && npm run lint && npm test
 
 frontend-build:

@@ -1,0 +1,33 @@
+---
+description: SvelteKit frontend conventions (Svelte 5, Vitest, Supabase browser client)
+globs: frontend/**
+alwaysApply: false
+---
+
+# Frontend (SvelteKit)
+
+## Stack
+
+SvelteKit 2, Svelte 5, TypeScript strict, Vitest + Testing Library, static adapter. Supabase via `@supabase/supabase-js` and `getSupabaseBrowser()` in `$lib/supabaseClient.ts`.
+
+## Layout
+
+- `src/routes/` — pages and layouts (`+page.svelte`, `+page.ts`, `+layout.ts`)
+- `src/lib/` — components, domain logic, shared styles (`styles/ui.css`)
+- Specs next to features: `src/lib/**/*.spec.ts`
+
+## Patterns
+
+- Env: `import.meta.env.SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` only — never service-role keys
+- Supabase writes go through RPCs defined in migrations when RLS requires it (e.g. `create_vote_with_options`)
+- Voting method values: `$lib/votingMethods.ts`
+- UI strings and education copy: `$lib/education/`
+
+## Verify
+
+```bash
+make frontend-test      # vitest
+make frontend-check     # svelte-check + eslint + vitest
+```
+
+Domain rules for votes/ballots: **`product-spec.md`**.
