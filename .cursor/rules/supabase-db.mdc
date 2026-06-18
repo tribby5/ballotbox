@@ -1,0 +1,27 @@
+---
+description: Supabase migrations and RLS — schema source of truth
+globs: supabase/**
+alwaysApply: false
+---
+
+# Supabase / Postgres
+
+## Rules
+
+- **Migrations are append-only** — add `supabase/migrations/YYYYMMDDHHMMSS_description.sql`; never edit migrations already applied
+- **RLS-first** — frontend uses anon/publishable key; enforce product rules in policies and SECURITY DEFINER RPCs
+- Name migrations: `YYYYMMDDHHMMSS_snake_case.sql` (match existing files)
+- Reference domain behavior in migration comments; details in **`product-spec.md`**
+
+## Key tables
+
+`votes`, `vote_options`, `ballots`, `ballot_rankings` — see `20260421120000_ballotbox_core.sql`. RLS + helpers in `20260616120000_ballotbox_rls.sql`.
+
+## Local
+
+```bash
+supabase db reset       # apply all migrations
+supabase migration new <name>
+```
+
+After schema changes: update frontend types/queries if needed and run **`make check`**.

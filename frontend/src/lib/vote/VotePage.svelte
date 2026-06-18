@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
   import SiteHeader from '$lib/layout/SiteHeader.svelte';
   import type { VoteRow } from '$lib/vote/voteRecord';
-  import { submitBallot } from '$lib/vote/submitBallot';
-
-  type OptionRow = { id: string; text: string };
+  import VoteModeTabs from './VoteModeTabs.svelte';
+  import VoteRankingCard from './VoteRankingCard.svelte';
+  import { reorderDragged, type OptionRow } from './votePage.ranking';
+  import { persistVoteBallot, submitDragOrder, submitNumericOrder } from './votePage.submit';
 
   let { vote }: { vote: VoteRow } = $props();
 
@@ -17,96 +17,49 @@
   let submitting = $state(false);
   let submittedProtected = $state(false);
 
+  const votingClosed = $derived(!!vote.locked_at);
+  const submitLabel = $derived(
+    submitting ? 'Submitting…' : votingClosed ? 'Voting closed' : 'Submit Vote',
+  );
+
   $effect.pre(() => {
-    ordered = vote.options.map((o) => ({
-      id: o.id,
-      text: o.label,
-    }));
+    ordered = vote.options.map((o) => ({ id: o.id, text: o.label }));
     numericRanks = vote.options.map(() => '');
     rankError = null;
     submitError = null;
     mode = 'drag';
   });
 
-  function onDragStart(index: number) {
-    dragFrom = index;
-  }
-
-  function onDragEnd() {
-    dragFrom = null;
-  }
-
-  function onDragOver(ev: DragEvent) {
-    ev.preventDefault();
+  function selectMode(next: 'drag' | 'numeric') {
+    mode = next;
+    rankError = null;
   }
 
   function onDrop(toIndex: number) {
     if (dragFrom === null) return;
-    const from = dragFrom;
-    const next = [...ordered];
-    const [item] = next.splice(from, 1);
-    next.splice(toIndex, 0, item);
-    ordered = next;
+    ordered = reorderDragged(ordered, dragFrom, toIndex);
     dragFrom = null;
   }
 
-  function parseRank(s: string): number | null {
-    const n = parseInt(s.trim(), 10);
-    if (!Number.isFinite(n) || String(n) !== s.trim()) return null;
-    return n;
-  }
-
-  function submitDrag() {
-    rankError = null;
-    const orderIds = ordered.map((o) => o.id);
-    void persistBallot(orderIds);
-  }
-
-  function submitNumeric() {
-    rankError = null;
-    const n = vote.options.length;
-    const parsed = numericRanks.map(parseRank);
-    if (parsed.some((p) => p === null)) {
-      rankError = 'Enter a whole number rank for every option.';
-      return;
-    }
-    const ranks = parsed as number[];
-    if (ranks.some((r) => r < 1 || r > n)) {
-      rankError = `Each rank must be between 1 and ${n}.`;
-      return;
-    }
-    const seen = new Set(ranks);
-    if (seen.size !== ranks.length) {
-      rankError = 'Ranks must be unique.';
-      return;
-    }
-    const orderIds = [...vote.options]
-      .map((opt, i) => ({ id: opt.id, r: ranks[i] }))
-      .sort((a, b) => a.r - b.r)
-      .map((x) => x.id);
-    void persistBallot(orderIds);
-  }
-
-  async function persistBallot(orderedOptionIds: string[]) {
-    if (vote.locked_at) {
-      submitError = 'This vote is closed to new responses.';
-      return;
-    }
+  async function handleSubmit() {
+    const orderIds =
+      mode === 'drag'
+        ? submitDragOrder(ordered)
+        : (() => {
+            const result = submitNumericOrder(numericRanks, vote.options);
+            if ('error' in result) {
+              rankError = result.error;
+              return null;
+            }
+            rankError = null;
+            return result.orderIds;
+          })();
+    if (!orderIds) return;
     submitting = true;
-    submitError = null;
-    submittedProtected = false;
-    try {
-      await submitBallot(vote.id, orderedOptionIds);
-      if (vote.password_protected) {
-        submittedProtected = true;
-        return;
-      }
-      await goto(`/results/${encodeURIComponent(vote.public_id)}`);
-    } catch (e) {
-      submitError = e instanceof Error ? e.message : 'Could not submit your vote.';
-    } finally {
-      submitting = false;
-    }
+    const outcome = await persistVoteBallot(vote, orderIds);
+    submitError = outcome.submitError;
+    submittedProtected = outcome.submittedProtected;
+    submitting = false;
   }
 </script>
 
@@ -119,243 +72,33 @@
       <p class="bb-page-sub">Rank the options from most to least preferred</p>
     </header>
 
-    <div class="mode-switch" role="tablist" aria-label="Ranking mode">
-      <button
-        type="button"
-        class="mode-btn"
-        class:mode-btn-active={mode === 'drag'}
-        role="tab"
-        aria-selected={mode === 'drag'}
-        tabindex={mode === 'drag' ? 0 : -1}
-        onclick={() => {
-          mode = 'drag';
-          rankError = null;
-        }}
-      >
-        Drag &amp; Drop
-      </button>
-      <button
-        type="button"
-        class="mode-btn"
-        class:mode-btn-active={mode === 'numeric'}
-        role="tab"
-        aria-selected={mode === 'numeric'}
-        tabindex={mode === 'numeric' ? 0 : -1}
-        onclick={() => {
-          mode = 'numeric';
-          rankError = null;
-        }}
-      >
-        Number Input
-      </button>
-    </div>
+    <VoteModeTabs {mode} onSelect={selectMode} />
 
-    <div class="vote-card bb-surface bb-surface--padded bb-surface--medium bb-surface--gap-loose">
-      {#if mode === 'drag'}
-        <ul class="option-list" role="list">
-          {#each ordered as row, i (row.id)}
-            <li
-              class="dnd-row"
-              draggable="true"
-              role="listitem"
-              ondragstart={() => onDragStart(i)}
-              ondragend={onDragEnd}
-              ondragover={onDragOver}
-              ondrop={() => onDrop(i)}
-            >
-              <span class="drag-handle" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="5" cy="5" r="1.5" fill="currentColor" />
-                  <circle cx="10" cy="5" r="1.5" fill="currentColor" />
-                  <circle cx="5" cy="10" r="1.5" fill="currentColor" />
-                  <circle cx="10" cy="10" r="1.5" fill="currentColor" />
-                  <circle cx="5" cy="15" r="1.5" fill="currentColor" />
-                  <circle cx="10" cy="15" r="1.5" fill="currentColor" />
-                </svg>
-              </span>
-              <div class="dnd-text">
-                <span class="rank-label">#{i + 1}</span>
-                <span class="option-label">{row.text}</span>
-              </div>
-            </li>
-          {/each}
-        </ul>
-      {:else}
-        <ul class="option-list numeric-list" role="list">
-          {#each vote.options as opt, i (opt.id)}
-            <li class="numeric-row">
-              <span class="option-label-static">{opt.label}</span>
-              <label class="sr-only" for="rank-{i}">Rank for {opt.label}</label>
-              <input
-                id="rank-{i}"
-                class="bb-input bb-input--narrow"
-                type="text"
-                inputmode="numeric"
-                autocomplete="off"
-                placeholder="1–{vote.options.length}"
-                value={numericRanks[i]}
-                oninput={(e) => {
-                  const next = [...numericRanks];
-                  next[i] = e.currentTarget.value;
-                  numericRanks = next;
-                }}
-              />
-            </li>
-          {/each}
-        </ul>
-        {#if rankError}
-          <p class="rank-error" role="alert">{rankError}</p>
-        {/if}
-      {/if}
-
-      {#if submitError}
-        <p class="rank-error" role="alert">{submitError}</p>
-      {/if}
-
-      {#if submittedProtected}
-        <p class="submit-ok" role="status">
-          Your vote was recorded. The vote organizer controls access to results for this vote.
-        </p>
-      {:else}
-        <button
-          class="bb-btn-primary-lg"
-          type="button"
-          disabled={submitting || !!vote.locked_at}
-          onclick={mode === 'drag' ? submitDrag : submitNumeric}
-        >
-          {submitting ? 'Submitting…' : vote.locked_at ? 'Voting closed' : 'Submit Vote'}
-        </button>
-      {/if}
-    </div>
+    <VoteRankingCard
+      {mode}
+      {vote}
+      {ordered}
+      {numericRanks}
+      {rankError}
+      {submitError}
+      {submittedProtected}
+      {submitting}
+      {votingClosed}
+      {submitLabel}
+      onDragStart={(index) => {
+        dragFrom = index;
+      }}
+      onDragEnd={() => {
+        dragFrom = null;
+      }}
+      onDragOver={(ev) => ev.preventDefault()}
+      {onDrop}
+      onRankChange={(index, value) => {
+        const next = [...numericRanks];
+        next[index] = value;
+        numericRanks = next;
+      }}
+      onSubmit={() => void handleSubmit()}
+    />
   </div>
 </div>
-
-<style>
-  .mode-switch {
-    display: inline-flex;
-    gap: var(--space-1);
-    padding: 4px;
-    border-radius: var(--radius-md);
-    background: var(--bg-share-url);
-    max-width: max-content;
-  }
-
-  .mode-btn {
-    height: 40px;
-    min-width: 7.5rem;
-    padding: 0 var(--space-2);
-    border: none;
-    border-radius: 10px;
-    background: transparent;
-    font-family: var(--font-sans);
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 24px;
-    color: var(--text-primary);
-    cursor: pointer;
-  }
-
-  .mode-btn-active {
-    background: var(--bg-card);
-    box-shadow: var(--shadow-card);
-  }
-
-  .mode-btn:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-
-  .vote-card {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .option-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  .dnd-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 58px;
-    padding: 17px;
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    background: var(--bg-card);
-    cursor: grab;
-  }
-
-  .dnd-row:active {
-    cursor: grabbing;
-  }
-
-  .drag-handle {
-    flex-shrink: 0;
-    display: inline-flex;
-    color: var(--text-muted);
-  }
-
-  .dnd-text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-
-  .rank-label {
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--text-muted);
-  }
-
-  .option-label {
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--text-primary);
-  }
-
-  .numeric-list {
-    gap: var(--space-2);
-  }
-
-  .numeric-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
-    padding: 12px var(--space-2);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    background: var(--bg-card);
-  }
-
-  .option-label-static {
-    font-size: 16px;
-    line-height: 24px;
-    color: var(--text-primary);
-  }
-
-  .rank-error {
-    margin: -28px 0 0;
-    font-size: 14px;
-    color: #b42318;
-  }
-
-  :global(html[data-theme='dark']) .rank-error {
-    color: #f97066;
-  }
-
-  .submit-ok {
-    margin: 0;
-    font-size: 14px;
-    line-height: 20px;
-    color: var(--text-muted);
-  }
-</style>

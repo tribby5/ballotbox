@@ -37,6 +37,7 @@ frontend/.vite/
 # IDE / OS
 .idea/
 .vscode/
+.cursor/verify-on-stop
 *.swp
 .DS_Store
 

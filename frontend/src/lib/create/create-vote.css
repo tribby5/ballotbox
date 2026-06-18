@@ -1,0 +1,51 @@
+.create-vote-option-inputs.options-block {
+  gap: 12px;
+}
+
+.create-vote-option-inputs .options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 20px;
+}
+
+.create-vote-option-inputs .option-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.create-vote-finalize.password-block {
+  gap: 0;
+}
+
+.create-vote-finalize.password-block .bb-label {
+  margin-bottom: 4px;
+}
+
+.create-vote-finalize.password-block .bb-input {
+  margin-top: 4px;
+}
+
+.create-vote-finalize .hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted);
+}
+
+.create-vote-finalize .finalize {
+  margin-top: 2px;
+}
+
+.create-vote-finalize .save-error {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: #b42318;
+}
+
+:global(html[data-theme='dark']) .create-vote-finalize .save-error {
+  color: #f97066;
+}

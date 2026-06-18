@@ -1,32 +1,45 @@
 ---
-description: Run repo tasks via the Makefile instead of ad-hoc package-manager commands
+description: Run dev servers, tests, Fallow, lint, and all checks via Makefile targets — not ad-hoc package-manager commands
 alwaysApply: true
 ---
 
 # Use the Makefile for project commands
 
-This repo’s workflows are wired in the root **Makefile**. Prefer those targets so installs, checks, and tests stay consistent.
+Canonical command reference: **`AGENTS.md`**. This rule reinforces it for Cursor.
+
+This repo’s workflows are wired in the root **`Makefile`**. **Always prefer `make …` targets** from the repo root for:
+
+- **Dev servers** — `make frontend-run`, `make backend-run`
+- **Tests** — `make test`, `make frontend-test`, `make backend-test`
+- **Lint, types, and quality gates** — `make check` (alias `make code-quality`)
+- **Fallow** — `make frontend-fallow-audit`, `make frontend-fallow-health`, `make frontend-fallow`
+- **Installs and builds** — `make install`, `make frontend-install`, `make frontend-build`
+
+Do **not** default to `cd frontend && npm …`, `cd backend && uv run …`, or `npx fallow …` when a Makefile target exists. Use ad-hoc package-manager commands only when the user explicitly asks to debug a single command, or when no `make` target covers the task yet (add a target first).
+
+When suggesting verification after changes, cite the matching **`make …`** target and run it from the repo root.
 
 ## Frontend (SvelteKit in `frontend/`)
 
 | Task | Command |
 |------|---------|
 | Install deps | `make frontend-install` |
-| Tests only | `make frontend-test` |
-| Typecheck + lint + tests | `make frontend-check` |
-| Production build | `make frontend-build` |
 | Dev server | `make frontend-run` |
-
-Do **not** default to `cd frontend && npm test` (or similar) when verifying the frontend; use **`make frontend-test`** unless the user asks otherwise.
+| Tests only | `make frontend-test` |
+| Typecheck + lint + fallow audit + tests | `make frontend-check` |
+| Fallow audit only (changed files) | `make frontend-fallow-audit` |
+| Fallow health + letter grade | `make frontend-fallow-health` |
+| Full Fallow report (whole frontend) | `make frontend-fallow` |
+| Production build | `make frontend-build` |
 
 ## Backend (`backend/`)
 
 | Task | Command |
 |------|---------|
 | Install | `make backend-install` |
+| Dev server | `make backend-run` |
 | Tests | `make backend-test` |
 | Lint + types + tests | `make backend-check` |
-| API dev server | `make backend-run` |
 
 ## Whole repo
 
@@ -34,6 +47,7 @@ Do **not** default to `cd frontend && npm test` (or similar) when verifying the 
 |------|---------|
 | Install everything | `make install` |
 | All tests | `make test` |
-| All checks | `make check` |
+| All lint + types + fallow audit + tests | `make code-quality` (alias: `make check`) |
+| Git hooks (Husky) | `make root-install` (also runs via `make install`) |
 
-When suggesting verification after changes, cite the matching **`make …`** target.
+Pre-commit runs **`make code-quality`** automatically.
