@@ -50,7 +50,7 @@ recommended for testability.)
 
 ---
 
-## BB-3 — Detailed results: ranking, breakdown, and "how the winner was decided"
+## BB-3 — Detailed results: ranking, breakdown, and "how the winner was decided" — DONE
 
 **Problem:** the results page renders a "Detailed Results" card that is an empty
 `coming soon` placeholder. Spec §4 wants full ranking, vote breakdown, and a per-method
@@ -64,6 +64,27 @@ explanation of the calculation.
 - Make the existing collapsible card actually expand/collapse.
 
 **Done when:** opening Detailed Results explains the outcome for each method type.
+
+**Status — shipped.** To make BB-3 real I folded in the engine (BB-1) and a data path
+(BB-2) on the **frontend** rather than the Python backend, so the feature works end to end
+now without standing up/deploying Lambda. If we still want server-side tabulation later,
+BB-1/BB-2 can port `tabulation.ts` to Python and repoint the fetch.
+
+- Engine: `frontend/src/lib/results/tabulation.ts` — all 6 methods produce winner, full
+  ranking, a primary-tally chart, ordered explanation steps, and (for Condorcet methods)
+  a pairwise matrix. Deterministic tie-breaking by sort order. Tested in
+  `tabulation.spec.ts` (Condorcet winner, IRV≠plurality, ranked-pairs cycle skip).
+- Data: `supabase/migrations/20260618000000_results_detail.sql` adds
+  `get_vote_results_detail` (SECURITY DEFINER, password-gated) returning vote metadata,
+  options, and anonymous ballots as ordered option-id arrays.
+- Fetch: `voteResultsRecord.ts` now calls the detail RPC and runs the engine; winner is
+  computed by the chosen method (no longer plurality-only).
+- UI: `ResultsDetail.svelte` (ranking + bar chart + steps + pairwise table) inside a
+  working collapsible in `ResultsPage.svelte`; multi-winner/tie and zero-ballot states
+  handled.
+
+**Follow-ups deferred to other tickets:** BB-2 still tracks the optional Python port; the
+zero-ballot empty state landed here but richer tie presentation stays in BB-4.
 
 ---
 
